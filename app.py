@@ -153,9 +153,17 @@ def load_css():
             color: #ffffff !important;
             font-size: 1rem !important;
             font-weight: 800 !important;
+            line-height: 1.2 !important;
             box-shadow: 0 10px 25px rgba(255,100,48,0.28) !important;
             opacity: 1 !important;
             -webkit-text-fill-color: #ffffff !important;
+            display: inline-flex !important;
+            align-items: center !important;
+            justify-content: center !important;
+            text-align: center !important;
+            white-space: normal !important;
+            overflow: visible !important;
+            padding: 0.7rem 1rem !important;
         }
         .kiosk-btn button *,
         .stButton button *,
@@ -173,11 +181,65 @@ def load_css():
             visibility:visible !important;
             -webkit-text-fill-color:#ffffff !important;
             text-shadow:none !important;
+            display:inline-flex !important;
+            align-items:center !important;
+            justify-content:center !important;
+            text-align:center !important;
+            white-space:normal !important;
+            overflow:visible !important;
+        }
+        .stButton button p,
+        .stButton button span,
+        .stButton button div,
+        .kiosk-btn button p,
+        .kiosk-btn button span,
+        .kiosk-btn button div,
+        .soft-btn button p,
+        .soft-btn button span,
+        .soft-btn button div,
+        button[kind=primary] p,
+        button[kind=primary] span,
+        button[kind=primary] div,
+        button[kind=secondary] p,
+        button[kind=secondary] span,
+        button[kind=secondary] div {
+            color:#ffffff !important;
+            fill:#ffffff !important;
+            stroke:none !important;
+            opacity:1 !important;
+            visibility:visible !important;
+            -webkit-text-fill-color:#ffffff !important;
+            font-size: inherit !important;
+            font-weight: inherit !important;
+            line-height: 1.2 !important;
+            text-align:center !important;
+            white-space:normal !important;
+            overflow:visible !important;
+            text-overflow:clip !important;
+            margin:0 !important;
+            padding:0 !important;
         }
         .soft-btn button {
             border-radius: 18px !important;
             min-height: 52px !important;
             font-weight: 700 !important;
+        }
+        @media (max-width: 1024px) {
+            .kiosk-btn button {
+                min-height: 62px !important;
+                font-size: 0.98rem !important;
+            }
+        }
+        @media (max-width: 768px) {
+            .kiosk-btn button,
+            .stButton button,
+            .soft-btn button,
+            button[kind=primary],
+            button[kind=secondary] {
+                min-height: 58px !important;
+                font-size: 0.96rem !important;
+                padding: 0.7rem 0.9rem !important;
+            }
         }
         .stTextInput input, .stSelectbox div[data-baseweb="select"] > div, .stTextArea textarea {
             border-radius: 16px !important;
@@ -190,6 +252,9 @@ def load_css():
             opacity: 1 !important;
         }
         .stSelectbox div[data-baseweb="select"] span,
+        label,
+        .stMarkdown label,
+        .stButton label,
         .stTextInput label,
         .stTextArea label,
         .stSelectbox label,
