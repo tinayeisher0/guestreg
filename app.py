@@ -29,29 +29,16 @@ INVOICE_DIR = UPLOAD_DIR / 'invoices'
 DOC_DIR = UPLOAD_DIR / 'contractor_docs'
 BADGE_DIR = UPLOAD_DIR / 'badges'
 QR_DIR = UPLOAD_DIR / 'staff_qr'
-GALLERY_DIR = UPLOAD_DIR / 'gallery'
 ASSET_DIR = BASE_DIR / 'assets'
 LOGO_PATH = ASSET_DIR / 'logo.png'
-DEFAULT_GALLERY_PATH = ASSET_DIR / 'idle_default.png'
 INACTIVITY_SECONDS = 90
 HOME_REFRESH_SECONDS = 180
 
 st.set_page_config(page_title='Embrace Kiosk', layout='wide', initial_sidebar_state='collapsed')
 init_db()
-for p in [INVOICE_DIR, DOC_DIR, BADGE_DIR, QR_DIR, GALLERY_DIR, ASSET_DIR]:
+for p in [INVOICE_DIR, DOC_DIR, BADGE_DIR, QR_DIR, ASSET_DIR]:
     p.mkdir(parents=True, exist_ok=True)
 
-
-def ensure_default_gallery_image():
-    if not DEFAULT_GALLERY_PATH.exists():
-        external = Path('/mnt/data/kkkkkk.png')
-        if external.exists():
-            shutil.copy(external, DEFAULT_GALLERY_PATH)
-    if not any(GALLERY_DIR.glob('*')) and DEFAULT_GALLERY_PATH.exists():
-        shutil.copy(DEFAULT_GALLERY_PATH, GALLERY_DIR / DEFAULT_GALLERY_PATH.name)
-
-
-ensure_default_gallery_image()
 
 
 def bootstrap_state():
@@ -111,7 +98,7 @@ def load_css():
         <style>
         [data-testid="stSidebar"], [data-testid="collapsedControl"] {display:none !important;}
         header {visibility:hidden;}
-        .block-container {max-width: 980px; padding-top: 0.55rem; padding-bottom: 1.6rem;}
+        .block-container {max-width: 980px; padding-top: 0.2rem; padding-bottom: 0.8rem;}
         .stApp {
             background: linear-gradient(180deg, #fbfbfb 0%, #f7f7f7 100%);
         }
@@ -125,8 +112,9 @@ def load_css():
         .hero-box {padding: 1.1rem;}
         .compact-title {font-size: 1.35rem; font-weight: 800; color: #222; margin-bottom: 0.2rem; text-align:center;}
         .muted {color:#707070; text-align:center; font-size:0.96rem;}
-        .logo-zone {display:flex; justify-content:center; align-items:center; width:100%; margin: 0.45rem 0 0.7rem 0;}
+        .logo-zone {display:flex; justify-content:center; align-items:center; width:100%; margin: 0.2rem 0 0.15rem 0;}
         .logo-zone img {display:block; margin:0 auto; object-fit:contain;}
+        .welcome-label {color:#111111 !important; text-align:center; font-size:1.45rem; font-weight:800; margin:0.1rem 0 0.55rem 0;}
         .banner {
             border-radius: 28px;
             padding: 1.25rem 1rem;
@@ -158,12 +146,12 @@ def load_css():
         .msg-green {background: linear-gradient(180deg, #22c55e, #15803d); color:white;}
         .msg-orange {background: linear-gradient(180deg, #fb923c, #ea580c); color:white;}
         .kiosk-btn button {
-            min-height: 74px !important;
+            min-height: 64px !important;
             border-radius: 999px !important;
             background: linear-gradient(180deg, #ff7a3a, #ff6430) !important;
             border: 0 !important;
             color: #ffffff !important;
-            font-size: 1.12rem !important;
+            font-size: 1rem !important;
             font-weight: 800 !important;
             box-shadow: 0 10px 25px rgba(255,100,48,0.28) !important;
             opacity: 1 !important;
@@ -234,7 +222,7 @@ def load_css():
         .stFileUploader section {
             border-radius: 18px !important;
         }
-        .small-note {text-align:center; color:#8c8c8c; font-size:0.86rem;}
+        .small-note {text-align:center; color:#8c8c8c; font-size:0.82rem; margin-top:0.35rem;}
         .gallery-manager-card {background:#fff; border:1px solid #ececec; border-radius:22px; padding:0.75rem; box-shadow:0 8px 22px rgba(0,0,0,0.05);}
         .gallery-label {font-size:0.9rem; font-weight:700; color:#111; text-align:center; margin-top:0.35rem; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;}
         .gallery-help {color:#525252; font-size:0.92rem; margin-bottom:0.45rem;}
@@ -245,12 +233,12 @@ def load_css():
             align-items: center !important;
             justify-content: center;
             text-align: center;
-            margin-top: 0.45rem;
-            margin-bottom: 0.15rem;
+            margin-top: 0.3rem;
+            margin-bottom: 0.05rem;
         }
         .qr-title {
             color: #111111 !important;
-            font-size: 0.88rem;
+            font-size: 0.82rem;
             font-weight: 800;
             text-align: center;
             letter-spacing: 0.04em;
@@ -258,7 +246,7 @@ def load_css():
             margin-bottom: 0.4rem;
         }
         .qr-image {
-            width: 150px;
+            width: 138px;
             border-radius: 18px;
             background: #ffffff;
             padding: 10px;
@@ -281,45 +269,6 @@ def image_to_data_uri(path: Path) -> str:
         mime = 'image/webp'
     data = base64.b64encode(path.read_bytes()).decode('utf-8')
     return f'data:{mime};base64,{data}'
-
-
-
-def get_gallery_files():
-    files = []
-    for ext in ('*.png', '*.jpg', '*.jpeg', '*.webp'):
-        files.extend(sorted(GALLERY_DIR.glob(ext)))
-    if not files and DEFAULT_GALLERY_PATH.exists():
-        files = [DEFAULT_GALLERY_PATH]
-    return files
-
-
-
-def render_idle_gallery():
-    files = get_gallery_files()
-    if not files:
-        return
-    uris = [image_to_data_uri(p) for p in files[:8]]
-    slides = ''.join(
-        [f"<div class='slide' style=\"background-image:url({uri})\"></div>" for uri in uris]
-    )
-    dots = ''.join([f"<span class='dot'></span>" for _ in uris])
-    html = f"""
-    <style>
-    .gallery-wrap {{ position: relative; height: 320px; border-radius: 24px; overflow: hidden; background:#d8d8d8; box-shadow:0 12px 28px rgba(0,0,0,0.10); }}
-    .slide {{ position:absolute; inset:0; background-size:contain; background-repeat:no-repeat; background-position:center center; opacity:0; animation:fadeGallery {max(12, len(uris)*5)}s infinite; }}
-    {''.join([f'.slide:nth-child({i+1})' + '{animation-delay:' + str(i*5) + 's;}' for i in range(len(uris))])}
-    @keyframes fadeGallery {{ 0% {{opacity:0; transform:scale(1.02);}} 8% {{opacity:1;}} 26% {{opacity:1;}} 34% {{opacity:0;}} 100% {{opacity:0; transform:scale(1.08);}} }}
-    .gallery-overlay {{ position:absolute; inset:auto 0 0 0; padding:12px 16px; background:linear-gradient(180deg, rgba(0,0,0,0), rgba(0,0,0,0.52)); color:white; font-size:14px; font-weight:700; text-align:center; }}
-    .dots {{ position:absolute; bottom:46px; width:100%; text-align:center; }}
-    .dot {{ height:7px; width:7px; margin:0 4px; display:inline-block; border-radius:50%; background:rgba(255,255,255,0.8); }}
-    </style>
-    <div class="gallery-wrap">
-      {slides}
-      <div class="dots">{dots}</div>
-      <div class="gallery-overlay">Welcome to Embrace Healthcare Solutions</div>
-    </div>
-    """
-    components.html(html, height=320)
 
 
 
@@ -507,10 +456,9 @@ def occupancy_banner(open_rows=None):
 
 def home_screen():
     register_activity('home')
-    show_logo(230)
+    show_logo(500)
+    st.markdown("<div class='welcome-label'>Welcome to Embrace</div>", unsafe_allow_html=True)
     render_flash_banner()
-    render_idle_gallery()
-    st.write('')
     r1 = st.columns(2)
     with r1[0]:
         st.markdown("<div class='kiosk-btn'>", unsafe_allow_html=True)
@@ -965,41 +913,9 @@ def admin_portal():
             st.dataframe(pd.DataFrame([{'Staff':r['full_name'],'Start':fmt_dt(r['start_at']),'End':fmt_dt(r['end_at']),'Reason':r['reason'] or '-','Approved By':r['approved_by'] or '-'} for r in bookings]), use_container_width=True, hide_index=True)
 
     with tabs[4]:
-        st.subheader('Idle screen gallery')
-        st.markdown("<div class='gallery-help'>Upload a few landscape images for the kiosk idle screen. Images are shown in a cleaner manager so they do not crowd the page.</div>", unsafe_allow_html=True)
-        gallery_uploads = st.file_uploader('Upload kiosk gallery images', type=['png', 'jpg', 'jpeg', 'webp'], accept_multiple_files=True)
-        if st.button('Save uploaded gallery images', use_container_width=True):
-            count = 0
-            for f in gallery_uploads or []:
-                if save_uploaded_file(f, GALLERY_DIR):
-                    count += 1
-            if count:
-                add_audit_log('KIOSK_GALLERY_UPLOAD', 'admin', f'{count} image(s) uploaded')
-                st.success(f'{count} image(s) added to the gallery.')
-                st.rerun()
-
-        gallery_files = get_gallery_files()
-        if gallery_files:
-            st.caption('Current gallery images')
-            cols = st.columns(4)
-            for i, gf in enumerate(gallery_files):
-                with cols[i % 4]:
-                    st.markdown("<div class='gallery-manager-card'>", unsafe_allow_html=True)
-                    st.image(str(gf), use_container_width=True)
-                    st.markdown(f"<div class='gallery-label' title='{gf.name}'>{gf.name}</div>", unsafe_allow_html=True)
-                    if gf == DEFAULT_GALLERY_PATH:
-                        st.caption('Default image')
-                    else:
-                        if st.button('Delete image', key=f'remove_{gf.name}', use_container_width=True):
-                            try:
-                                gf.unlink(missing_ok=True)
-                                add_audit_log('KIOSK_GALLERY_DELETE', 'admin', gf.name)
-                                st.warning('Image removed.')
-                                st.rerun()
-                            except Exception as exc:
-                                st.error(str(exc))
-                    st.markdown("</div>", unsafe_allow_html=True)
-        st.subheader('Banner preview')
+        st.subheader('Kiosk Display Preview')
+        show_logo(320)
+        st.markdown("<div class='welcome-label'>Welcome to Embrace</div>", unsafe_allow_html=True)
         occupancy_banner()
         st.markdown("<div class='message-card msg-green'>You are logged out<p>Thank you. Please lock doors and arm the alarm.</p></div>", unsafe_allow_html=True)
         st.markdown("<div class='message-card msg-red'>Welcome back<p>You are logged in. Building status has been updated.</p></div>", unsafe_allow_html=True)
