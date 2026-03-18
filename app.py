@@ -37,38 +37,6 @@ INACTIVITY_SECONDS = 90
 HOME_REFRESH_SECONDS = 180
 
 st.set_page_config(page_title='Embrace Kiosk', layout='wide', initial_sidebar_state='collapsed')
-
-st.markdown("""
-<style>
-/* FORCE BUTTON TEXT */
-.stButton > button {
-    background-color: #ffffff !important;
-    color: #000000 !important;
-    border-radius: 12px !important;
-    font-weight: 600 !important;
-    font-size: 1rem !important;
-    border: 1px solid rgba(0,0,0,0.15) !important;
-}
-.stButton > button p { color:#000000 !important; }
-.stButton > button:hover { background-color:#f5f5f5 !important; color:#000000 !important; }
-.stButton > button:active { background-color:#eaeaea !important; color:#000000 !important; }
-
-/* LABEL TEXT */
-.qr-title {
-    color:#000000 !important;
-    font-weight:800 !important;
-    text-align:center;
-}
-
-/* INPUTS */
-input, textarea {
-    background-color:#ffffff !important;
-    color:#000000 !important;
-}
-[data-testid="stTextInput"] input { color:#000000 !important; }
-[data-testid="stSelectbox"] div { color:#000000 !important; }
-</style>
-""", unsafe_allow_html=True)
 init_db()
 for p in [INVOICE_DIR, DOC_DIR, BADGE_DIR, QR_DIR, GALLERY_DIR, ASSET_DIR]:
     p.mkdir(parents=True, exist_ok=True)
@@ -270,6 +238,34 @@ def load_css():
         .gallery-manager-card {background:#fff; border:1px solid #ececec; border-radius:22px; padding:0.75rem; box-shadow:0 8px 22px rgba(0,0,0,0.05);}
         .gallery-label {font-size:0.9rem; font-weight:700; color:#111; text-align:center; margin-top:0.35rem; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;}
         .gallery-help {color:#525252; font-size:0.92rem; margin-bottom:0.45rem;}
+        .qr-center-container {
+            width: 100%;
+            display: flex;
+            flex-direction: column;
+            align-items: center !important;
+            justify-content: center;
+            text-align: center;
+            margin-top: 0.45rem;
+            margin-bottom: 0.15rem;
+        }
+        .qr-title {
+            color: #111111 !important;
+            font-size: 0.88rem;
+            font-weight: 800;
+            text-align: center;
+            letter-spacing: 0.04em;
+            text-transform: uppercase;
+            margin-bottom: 0.4rem;
+        }
+        .qr-image {
+            width: 150px;
+            border-radius: 18px;
+            background: #ffffff;
+            padding: 10px;
+            box-shadow: 0 10px 24px rgba(0,0,0,0.22);
+            display: block;
+            margin: 0 auto;
+        }
         </style>
         ''',
         unsafe_allow_html=True,
@@ -343,6 +339,40 @@ def qr_png_bytes(payload: str):
     buf = io.BytesIO()
     img.save(buf, format='PNG')
     return buf.getvalue()
+
+
+def infer_runtime_url() -> str | None:
+    try:
+        headers = getattr(st, 'context', None).headers
+        host = headers.get('Host') or headers.get('host')
+        proto = headers.get('X-Forwarded-Proto') or headers.get('x-forwarded-proto') or 'https'
+        if host:
+            return f'{proto}://{host}'
+    except Exception:
+        pass
+    return None
+
+
+def get_home_qr_url() -> str:
+    inferred = infer_runtime_url()
+    if inferred:
+        return inferred
+    return 'http://localhost:8501'
+
+
+def render_home_qr():
+    public_url = get_home_qr_url()
+    qr_bytes = qr_png_bytes(public_url)
+    qr_b64 = base64.b64encode(qr_bytes).decode('utf-8')
+    st.markdown(
+        f"""
+        <div class="qr-center-container">
+            <div class="qr-title">Access From Mobile</div>
+            <img src="data:image/png;base64,{qr_b64}" class="qr-image">
+        </div>
+        """,
+        unsafe_allow_html=True,
+    )
 
 
 
@@ -508,6 +538,7 @@ def home_screen():
             st.rerun()
         st.markdown('</div>', unsafe_allow_html=True)
     st.markdown(f"<div class='small-note'>{now_local().strftime('%A %d %b %Y • %I:%M %p')}</div>", unsafe_allow_html=True)
+    render_home_qr()
 
 
 
